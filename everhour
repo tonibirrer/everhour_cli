@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -e
+cd $(dirname $0)
+
+if [ $# -eq 0 ]; then
+    python ./everhour.py "-v"
+    exit 1
+else
+    python ./everhour.py "$@"
+fi
