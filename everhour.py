@@ -22,7 +22,7 @@ except ImportError:
 
 # Script version. It's recommended to increment this with every change, to make
 # debugging easier.
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 BASE_URL = 'https://api.everhour.com'
 
 # Set up logging.
