@@ -207,12 +207,12 @@ def set_time(task, hours, date, **kwargs):
     if 'time' in ret['task']:
         total_hours = ret['task']['time']['total']
         if total_hours:
-            total_hours = int(total_hours/60/60)
+            total_hours = seconds_to_str(total_hours)
 
         if str(user['id']) in ret['task']['time']['users']:
             user_hours = ret['task']['time']['users'][str(user['id'])]
             if user_hours:
-                user_hours = int(user_hours/60/60)
+                user_hours = seconds_to_str(user_hours)
         else:
             user_hours = 0
     else:
@@ -246,12 +246,12 @@ def add_time(task, hours, date, **kwargs):
     if 'time' in ret['task']:
         total_hours = ret['task']['time']['total']
         if total_hours:
-            total_hours = int(total_hours/60/60)
+            total_hours = seconds_to_str(total_hours)
 
         if str(user['id']) in ret['task']['time']['users']:
             user_hours = ret['task']['time']['users'][str(user['id'])]
             if user_hours:
-                user_hours = int(user_hours/60/60)
+                user_hours = seconds_to_str(user_hours)
         else:
             user_hours = 0
     else:
@@ -315,7 +315,7 @@ def list_tasks(project, **kwargs):
         if 'time' in task:
             if 'total' in task['time']:
                 seconds = task['time']['total']
-                hours = int(seconds/60/60)
+                hours = seconds_to_str(seconds)
 
         log.info(u'| %s | %s | %s |', task['id'].ljust(18), task['name'].ljust(40),
                  str(hours).ljust(20))
