@@ -18,6 +18,25 @@ Add the folder to your $PATH variable
 3. Copy the API Token into your clipboard
 4. Edit the everhour.ini file and replace the example token
 
+### List recent time log entries of current user
+
+```
+everhour log ls --limit 3
+```
+
+#### Output
+
+```
+------------------------------------------------------------------------------------------------------------------
+| Date         | Project                        | Task                           | Task ID              | Hours  |
+------------------------------------------------------------------------------------------------------------------
+| 2018-05-19   | My Client                      | Setup Dev Server               | ev:164347293151111   | 5.00   |
+| 2018-05-18   | My Client                      | Setup Dev Server               | ev:164347293151111   | 3.00   |
+| 2018-05-17   | My Client                      | Setup Dev Server               | ev:164347293151111   | 5.00   |
+------------------------------------------------------------------------------------------------------------------
+```
+
+
 ### List all Projects
 
 ```
