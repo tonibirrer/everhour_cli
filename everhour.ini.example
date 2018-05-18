@@ -1,0 +1,5 @@
+#rename this file to everhour.ini
+#set the token to the value found under https://app.everhour.com/#/account/profile
+
+[everhour]
+token = xxxx-xxxx-xxxxxx-xxxxxx-xxxxxxxx
