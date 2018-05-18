@@ -8,11 +8,17 @@ import ConfigParser
 import logging
 import os
 import sys
+import tempfile
 import time
+
 import requests
-import ujson as json
-from datetime import datetime, timedelta
+import pyfscache
 import moment
+try:
+    import ujson as json
+except ImportError:
+    import json
+
 
 # Script version. It's recommended to increment this with every change, to make
 # debugging easier.
@@ -23,6 +29,7 @@ BASE_URL = 'https://api.everhour.com'
 log = logging.getLogger('{0}[{1}]'.format(os.path.basename(sys.argv[0]),
                                           os.getpid()))
 
+cache = pyfscache.FSCache(tempfile.gettempdir(), hours=1)
 
 def run():
     """Main entry point run by __main__ below. No need to change this usually.
@@ -80,6 +87,7 @@ def parse_args():
 
     #set time
     tlog = subparsers.add_parser('log', help='Commands related to time logging')
+
     log_sub = tlog.add_subparsers(help='sub-command help')
     log_set = log_sub.add_parser('set', help='set logged hours for a day')
     log_set.add_argument('--task', required=True, type=unicode)
@@ -96,6 +104,12 @@ def parse_args():
                          help='date formated as 2018-01-20, defaults to today, also supports ' \
                          'mon, tue, wed, thu, fri, sat, sun')
     log_add.set_defaults(func=add_time)
+
+    #set time
+    log_ls = log_sub.add_parser('ls', help='list recently logged time')
+    log_ls.add_argument('--limit', default=20, type=int, help="Limit of records, default 20")
+    log_ls.set_defaults(func=log_recent)
+
 
     return parser.parse_args()
 
@@ -128,12 +142,47 @@ def parse_date(date):
     return date.format("YYYY-MM-DD")
 
 
+@cache
 def get_profile():
     """
     Gets current users profile
     """
 
     return get('/users/me')
+
+@cache
+def get_project(project_id):
+    """
+    Gets a project by id
+    """
+
+    return get('/projects/{0}'.format(project_id))
+
+def log_recent(limit, **kwargs):
+    user = get_profile()
+    ret = get('/users/{0}/time?limit={1}&offset=0'.format(user['id'], limit))
+    log.debug('%s', json.dumps(ret, indent=2))
+
+    log.info(u'--%s---%s---%s---%s---%s--', ''.ljust(12, '-'), ''.ljust(30, '-'), ''.ljust(30, '-'),
+             ''.ljust(20, '-'), ''.ljust(6, '-'))
+    log.info(u'| %s | %s | %s | %s | %s |', 'Date'.ljust(12), 'Project'.ljust(30), 'Task'.ljust(30),
+             'Task ID'.ljust(20), 'Hours'.ljust(6))
+    log.info(u'--%s---%s---%s---%s---%s--', ''.ljust(12, '-'), ''.ljust(30, '-'), ''.ljust(30, '-'),
+             ''.ljust(20, '-'), ''.ljust(6, '-'))
+
+    for task in ret:
+        project = get_project(task['task']['projects'][0])
+
+        log.info(u'| %s | %s | %s | %s | %s |', task['date'].ljust(12),
+                 project['name'].ljust(30)[0:30], task['task']['name'].ljust(30)[0:30],
+                 task['task']['id'].ljust(20), seconds_to_str(task['time']).ljust(6))
+
+    log.info(u'--%s---%s---%s---%s---%s--', ''.ljust(12, '-'), ''.ljust(30, '-'), ''.ljust(30, '-'),
+             ''.ljust(20, '-'), ''.ljust(6, '-'))
+
+def seconds_to_str(seconds):
+    hours = float(seconds / 60 / 60)
+    return "{0:.2f}".format(hours)
 
 def set_time(task, hours, date, **kwargs):
 
@@ -234,11 +283,11 @@ def list_projects(query, **kwargs):
 
     log.info(u'--%s---%s--', ''.ljust(18, '-'), ''.ljust(40, '-'))
 
-def get_task(id):
+def get_task(task_id):
     """
     Get a task by id
     """
-    return get('/tasks/{0}'.format(id))
+    return get('/tasks/{0}'.format(task_id))
 
 def list_tasks(project, **kwargs):
     """
@@ -268,7 +317,8 @@ def list_tasks(project, **kwargs):
                 seconds = task['time']['total']
                 hours = int(seconds/60/60)
 
-        log.info(u'| %s | %s | %s |', task['id'].ljust(18), task['name'].ljust(40), str(hours).ljust(20))
+        log.info(u'| %s | %s | %s |', task['id'].ljust(18), task['name'].ljust(40),
+                 str(hours).ljust(20))
 
     log.info(u'--%s---%s---%s--', ''.ljust(18, '-'), ''.ljust(40, '-'), ''.ljust(20, '-'))
 
