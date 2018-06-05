@@ -23,9 +23,10 @@ VERSION = '1.0.1'
 # What packages are required for this module to be executed?
 REQUIRED = [
     'moment',
-    'ujson',
-    'requests',
     'pyfscache',
+    'requests',
+    'tabulate',
+    'ujson'
 ]
 
 # The rest you shouldn't have to touch too much :)
