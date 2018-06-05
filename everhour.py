@@ -11,9 +11,10 @@ import sys
 import tempfile
 import time
 
-import requests
-import pyfscache
 import moment
+import pyfscache
+import requests
+import tabulate
 try:
     import ujson as json
 except ImportError:
@@ -158,31 +159,23 @@ def get_project(project_id):
 
     return get('/projects/{0}'.format(project_id))
 
+
 def log_recent(limit, **kwargs):
     user = get_profile()
     ret = get('/users/{0}/time?limit={1}&offset=0'.format(user['id'], limit))
-    log.debug('%s', json.dumps(ret, indent=2))
 
-    log.info(u'--%s---%s---%s---%s---%s--', ''.ljust(12, '-'), ''.ljust(30, '-'), ''.ljust(30, '-'),
-             ''.ljust(20, '-'), ''.ljust(6, '-'))
-    log.info(u'| %s | %s | %s | %s | %s |', 'Date'.ljust(12), 'Project'.ljust(30), 'Task'.ljust(30),
-             'Task ID'.ljust(20), 'Hours'.ljust(6))
-    log.info(u'--%s---%s---%s---%s---%s--', ''.ljust(12, '-'), ''.ljust(30, '-'), ''.ljust(30, '-'),
-             ''.ljust(20, '-'), ''.ljust(6, '-'))
+    def _get_table(ret):
+        for task in ret:
+            project = get_project(task['task']['projects'][0])
+            row = (task['date'], project['name'], task['task']['name'], task['task']['id'], seconds_to_str(task['time']))
+            yield row
+    log.info(tabulate.tabulate(_get_table(ret), ['Date', 'Project', 'Task', 'Task ID', 'Hours'], tablefmt="grid"))
 
-    for task in ret:
-        project = get_project(task['task']['projects'][0])
-
-        log.info(u'| %s | %s | %s | %s | %s |', task['date'].ljust(12),
-                 project['name'].ljust(30)[0:30], task['task']['name'].ljust(30)[0:30],
-                 task['task']['id'].ljust(20), seconds_to_str(task['time']).ljust(6))
-
-    log.info(u'--%s---%s---%s---%s---%s--', ''.ljust(12, '-'), ''.ljust(30, '-'), ''.ljust(30, '-'),
-             ''.ljust(20, '-'), ''.ljust(6, '-'))
 
 def seconds_to_str(seconds):
     hours = float(seconds / 60 / 60)
     return "{0:.2f}".format(hours)
+
 
 def set_time(task, hours, date, **kwargs):
 
@@ -272,16 +265,12 @@ def list_projects(query, **kwargs):
 
     ret = get('/projects?limit=&query={0}&platform='.format(query))
 
-    log.debug('%s', json.dumps(ret, indent=2))
+    def _get_table(ret):
+        for project in ret:
+            row = (project['id'], project['name'])
+            yield row
+    log.info(tabulate.tabulate(_get_table(ret), ['Id', 'Name'], tablefmt="grid"))
 
-    log.info(u'--%s---%s--', ''.ljust(18, '-'), ''.ljust(40, '-'))
-    log.info(u'| %s | %s |', 'Id'.ljust(18), 'Name'.ljust(40))
-    log.info(u'--%s---%s--', ''.ljust(18, '-'), ''.ljust(40, '-'))
-
-    for project in ret:
-        log.info(u'| %s | %s |', project['id'].ljust(18), project['name'].ljust(40))
-
-    log.info(u'--%s---%s--', ''.ljust(18, '-'), ''.ljust(40, '-'))
 
 def get_task(task_id):
     """
@@ -298,29 +287,23 @@ def list_tasks(project, **kwargs):
         log.error('Please specify a project id, check --help for details')
         quit(1)
 
-    if not 'ev:' in project:
-        project = u'ev:{0}'.format(project)
+    if not 'as:' in project:
+        project = u'as:{0}'.format(project)
 
     ret = get('/projects/{0}/tasks'.format(project))
-    log.debug('%s', json.dumps(ret, indent=2))
 
-    log.info(u'--%s---%s---%s--', ''.ljust(18, '-'), ''.ljust(40, '-'), ''.ljust(20, '-'))
-    log.info(u'| %s | %s | %s |', 'Id'.ljust(18), 'Name'.ljust(40), 'Hours'.ljust(20))
-    log.info(u'--%s---%s---%s--', ''.ljust(18, '-'), ''.ljust(40, '-'), ''.ljust(20, '-'))
+    def _get_table(ret):
+        for task in ret:
+            if 'time' in task:
+                if 'total' in task['time']:
+                    seconds = task['time']['total']
+                    hours = seconds_to_str(seconds)
 
-    for task in ret:
+            row = (task['id'], task['name'], str(hours))
+            yield row
 
-        hours = 0
+    log.info(tabulate.tabulate(_get_table(ret), ['Id', 'Name', 'Hours'], tablefmt="grid"))
 
-        if 'time' in task:
-            if 'total' in task['time']:
-                seconds = task['time']['total']
-                hours = seconds_to_str(seconds)
-
-        log.info(u'| %s | %s | %s |', task['id'].ljust(18), task['name'].ljust(40),
-                 str(hours).ljust(20))
-
-    log.info(u'--%s---%s---%s--', ''.ljust(18, '-'), ''.ljust(40, '-'), ''.ljust(20, '-'))
 
 def get(path):
     """

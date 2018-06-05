@@ -1,5 +1,5 @@
 # Simple Everhour CLI bassed Hour Reporting
-Version 1.0.0
+Version 1.0.1
 
 ## Getting started
 

@@ -1,4 +1,5 @@
 moment
-ujson
-requests·
 pyfscache
+tabulate
+requests·
+ujson
